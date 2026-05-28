@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>HSR Build Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Rajdhani:wght@400;500;600&family=Exo+2:wght@300;400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#06051a;--bg2:#0d0c28;--bg3:#111030;
+  --gold:#c9a84c;--gold2:#edd97a;--gold-d:rgba(201,168,76,.3);
+  --cyan:#4de8d4;--cyan-d:rgba(77,232,212,.2);
+  --pur:#9b80ff;--pur-d:rgba(155,128,255,.25);
+  --tx:#e0d8f8;--sub:#7868a8;
+}
+html,body{height:100%;background:var(--bg);color:var(--tx);font-family:'Exo 2',sans-serif;}
+.app{min-height:100vh;position:relative;background:radial-gradient(ellipse 60% 80% at 15% 50%,rgba(80,40,200,.14) 0%,transparent 60%),radial-gradient(ellipse 50% 60% at 85% 20%,rgba(40,120,200,.1) 0%,transparent 55%),radial-gradient(ellipse 40% 50% at 50% 90%,rgba(200,40,150,.07) 0%,transparent 50%),var(--bg);display:flex;flex-direction:column;}
+.stars{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
+.star{position:absolute;border-radius:50%;background:#fff;animation:twinkle var(--d,3s) ease-in-out infinite var(--dl,0s);}
+@keyframes twinkle{0%,100%{opacity:var(--lo,.1);transform:scale(1);}50%{opacity:var(--hi,.7);transform:scale(1.4);}}
+.header{position:relative;z-index:1;text-align:center;padding:2rem 1rem 1.2rem;border-bottom:1px solid var(--gold-d);}
+.header h1{font-family:'Cinzel',serif;font-size:clamp(1.3rem,4vw,2rem);font-weight:700;color:var(--gold2);letter-spacing:.18em;text-shadow:0 0 30px rgba(237,217,122,.4);}
+.header p{color:var(--sub);font-size:.8rem;letter-spacing:.12em;margin-top:.35rem;text-transform:uppercase;font-family:'Rajdhani',sans-serif;}
+.layout{position:relative;z-index:1;display:flex;flex:1;max-width:1060px;margin:0 auto;width:100%;padding:1.5rem;gap:1.5rem;align-items:flex-start;}
+.sidebar{width:210px;flex-shrink:0;display:flex;flex-direction:column;gap:.45rem;}
+.sb-title{font-family:'Rajdhani',sans-serif;font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;color:var(--sub);padding:0 .4rem .5rem;border-bottom:1px solid rgba(201,168,76,.12);margin-bottom:.2rem;}
+.char-card{background:var(--bg2);border:1px solid rgba(201,168,76,.12);border-radius:8px;padding:.65rem .85rem;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;gap:.3rem;}
+.char-card:hover{border-color:var(--gold-d);background:var(--bg3);transform:translateX(3px);}
+.char-card.active{border-color:var(--gold);background:rgba(201,168,76,.07);box-shadow:0 0 16px rgba(201,168,76,.1),inset 0 0 12px rgba(201,168,76,.05);}
+.char-name{font-family:'Rajdhani',sans-serif;font-weight:600;font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.char-card.active .char-name{color:var(--gold2);}
+.pbar{height:3px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;}
+.pbar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--gold),var(--cyan));transition:width .4s ease;}
+.ppct{font-size:.68rem;color:var(--sub);font-family:'Rajdhani',sans-serif;}
+.char-card.active .ppct{color:var(--gold);}
+.add-btn{margin-top:.4rem;background:transparent;border:1px dashed rgba(77,232,212,.28);border-radius:8px;padding:.65rem;color:var(--cyan);font-family:'Rajdhani',sans-serif;font-size:.82rem;letter-spacing:.1em;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:.4rem;}
+.add-btn:hover{background:var(--cyan-d);border-color:var(--cyan);}
+.add-form{background:var(--bg2);border:1px solid rgba(77,232,212,.25);border-radius:8px;padding:.75rem;display:flex;flex-direction:column;gap:.45rem;margin-top:.4rem;}
+.add-form input{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.08);border-radius:5px;padding:.45rem .65rem;color:var(--tx);font-family:'Exo 2',sans-serif;font-size:.83rem;outline:none;transition:border-color .2s;width:100%;}
+.add-form input:focus{border-color:var(--cyan);}
+.add-form input::placeholder{color:var(--sub);}
+.add-btns{display:flex;gap:.35rem;}
+.btn-ok{flex:1;background:rgba(77,232,212,.12);border:1px solid var(--cyan);color:var(--cyan);border-radius:5px;padding:.38rem;font-family:'Rajdhani',sans-serif;font-size:.78rem;cursor:pointer;transition:all .2s;letter-spacing:.05em;}
+.btn-ok:hover{background:var(--cyan-d);}
+.btn-no{background:transparent;border:1px solid rgba(255,255,255,.08);color:var(--sub);border-radius:5px;padding:.38rem .65rem;font-family:'Rajdhani',sans-serif;font-size:.78rem;cursor:pointer;transition:all .2s;}
+.btn-no:hover{border-color:rgba(255,80,80,.4);color:#ff6060;}
+.detail{flex:1;min-width:0;}
+.empty{display:flex;align-items:center;justify-content:center;height:380px;color:var(--sub);font-family:'Rajdhani',sans-serif;letter-spacing:.15em;font-size:.88rem;text-align:center;flex-direction:column;gap:.8rem;}
+.empty .ico{font-size:2.8rem;opacity:.25;}
+.dh{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.4rem;gap:1rem;flex-wrap:wrap;}
+.dname{font-family:'Cinzel',serif;font-size:1.45rem;color:var(--gold2);text-shadow:0 0 20px rgba(237,217,122,.3);}
+.ovr{display:flex;align-items:center;gap:.75rem;background:rgba(0,0,0,.22);border:1px solid var(--gold-d);border-radius:8px;padding:.45rem .9rem;}
+.ovr-pct{font-family:'Cinzel',serif;font-size:1.1rem;color:var(--gold2);min-width:44px;}
+.ovr-bar{width:90px;height:5px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;}
+.ovr-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--gold),var(--cyan));transition:width .5s ease;}
+.del-btn{background:transparent;border:1px solid rgba(255,80,80,.18);color:rgba(255,80,80,.45);border-radius:5px;padding:.38rem .75rem;font-family:'Rajdhani',sans-serif;font-size:.72rem;cursor:pointer;letter-spacing:.1em;transition:all .2s;}
+.del-btn:hover{border-color:rgba(255,80,80,.55);color:#ff5050;background:rgba(255,80,80,.07);}
+.secs{display:flex;flex-direction:column;gap:1rem;}
+.sec{background:var(--bg2);border:1px solid rgba(201,168,76,.1);border-radius:10px;overflow:hidden;}
+.sec-hd{display:flex;align-items:center;justify-content:space-between;padding:.62rem .9rem;background:rgba(0,0,0,.22);border-bottom:1px solid rgba(201,168,76,.08);}
+.sec-title{font-family:'Rajdhani',sans-serif;font-weight:600;font-size:.75rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);}
+.sec-ct{font-family:'Rajdhani',sans-serif;font-size:.72rem;color:var(--sub);}
+.sec-body{padding:.75rem .9rem;}
+.eid-row{display:flex;gap:.65rem;flex-wrap:wrap;}
+.eid-node{display:flex;flex-direction:column;align-items:center;gap:.28rem;cursor:pointer;user-select:none;}
+.eid-circle{width:42px;height:42px;border-radius:50%;border:2px solid var(--pur-d);display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:.82rem;font-weight:600;color:var(--sub);transition:all .25s;background:rgba(0,0,0,.3);}
+.eid-node.on .eid-circle{border-color:var(--pur);color:var(--pur);box-shadow:0 0 14px rgba(155,128,255,.45);background:rgba(155,128,255,.1);}
+.eid-lbl{font-size:.62rem;letter-spacing:.1em;font-family:'Rajdhani',sans-serif;color:var(--sub);transition:color .2s;}
+.eid-node.on .eid-lbl{color:var(--pur);}
+.cg{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:.42rem;}
+.ci{display:flex;align-items:center;gap:.55rem;padding:.45rem .65rem;border-radius:6px;cursor:pointer;transition:all .2s;border:1px solid transparent;user-select:none;}
+.ci:hover{background:rgba(255,255,255,.035);}
+.ci.on{background:rgba(77,232,212,.045);border-color:rgba(77,232,212,.14);}
+.cb{width:17px;height:17px;border-radius:4px;border:1.5px solid rgba(255,255,255,.18);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s;background:rgba(0,0,0,.25);}
+.ci.on .cb{background:var(--cyan);border-color:var(--cyan);box-shadow:0 0 7px rgba(77,232,212,.4);}
+.ck{display:none;color:#06051a;font-size:.65rem;font-weight:900;line-height:1;}
+.ci.on .ck{display:block;}
+.cl{font-size:.8rem;color:var(--sub);transition:color .2s;}
+.ci.on .cl{color:var(--tx);}
+.asc-row{display:flex;gap:.55rem;flex-wrap:wrap;align-items:center;}
+.asc-step{display:flex;flex-direction:column;align-items:center;gap:.28rem;cursor:pointer;user-select:none;}
+.asc-diamond{width:40px;height:40px;border-radius:6px;transform:rotate(45deg);border:2px solid rgba(201,168,76,.2);display:flex;align-items:center;justify-content:center;transition:all .25s;background:rgba(0,0,0,.3);}
+.asc-inner{transform:rotate(-45deg);font-family:'Cinzel',serif;font-size:.72rem;font-weight:600;color:var(--sub);transition:color .2s;}
+.asc-step.on .asc-diamond{border-color:var(--gold);background:rgba(201,168,76,.12);box-shadow:0 0 12px rgba(201,168,76,.35);}
+.asc-step.on .asc-inner{color:var(--gold2);}
+.asc-lbl{font-size:.62rem;letter-spacing:.08em;font-family:'Rajdhani',sans-serif;color:var(--sub);transition:color .2s;}
+.asc-step.on .asc-lbl{color:var(--gold);}
+.asc-cap{font-size:.58rem;color:var(--sub);font-family:'Rajdhani',sans-serif;opacity:.7;}
+.tr-main{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:.38rem;margin-bottom:.7rem;}
+.tr-stat-lbl{font-family:'Rajdhani',sans-serif;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--sub);margin:.4rem 0;padding-top:.5rem;border-top:1px solid rgba(255,255,255,.05);}
+.tr-stat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:.38rem;}
+.sn{display:flex;flex-direction:column;align-items:center;gap:.22rem;cursor:pointer;padding:.38rem;border-radius:6px;border:1px solid transparent;transition:all .2s;user-select:none;}
+.sn:hover{background:rgba(255,255,255,.035);}
+.sn.on{background:rgba(201,168,76,.07);border-color:rgba(201,168,76,.18);}
+.sd{width:22px;height:22px;border-radius:50%;border:1.5px solid rgba(255,255,255,.13);display:flex;align-items:center;justify-content:center;transition:all .2s;background:rgba(0,0,0,.25);font-size:.6rem;color:transparent;}
+.sn.on .sd{background:var(--gold);border-color:var(--gold);box-shadow:0 0 7px rgba(201,168,76,.45);color:#06051a;}
+.sn-lbl{font-size:.58rem;color:var(--sub);font-family:'Rajdhani',sans-serif;letter-spacing:.04em;transition:color .2s;}
+.sn.on .sn-lbl{color:var(--gold);}
+.notes-ta{width:100%;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.08);border-radius:7px;padding:.65rem .8rem;color:var(--tx);font-family:'Exo 2',sans-serif;font-size:.82rem;line-height:1.6;resize:vertical;min-height:80px;outline:none;transition:border-color .2s;}
+.notes-ta:focus{border-color:rgba(201,168,76,.35);}
+.notes-ta::placeholder{color:var(--sub);}
+/* AVATAR */
+.char-card-row{display:flex;gap:.5rem;align-items:center;}
+.char-card-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:.26rem;}
+.char-avatar{width:36px;height:36px;border-radius:6px;object-fit:cover;object-position:top center;border:1px solid var(--gold-d);flex-shrink:0;background:rgba(0,0,0,.3);}
+.char-avatar-ph{width:36px;height:36px;border-radius:6px;border:1px dashed rgba(255,255,255,.1);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.85rem;color:var(--sub);background:rgba(0,0,0,.2);}
+.char-avatar-spin{width:36px;height:36px;border-radius:6px;border:1px solid var(--gold-d);flex-shrink:0;background:rgba(0,0,0,.2);animation:spin-pulse 1.5s ease-in-out infinite;}
+@keyframes spin-pulse{0%,100%{opacity:.3;}50%{opacity:.9;}}
+.dh-left{display:flex;align-items:center;gap:1rem;}
+.dh-info{display:flex;flex-direction:column;gap:.4rem;}
+.dh-avatar{width:90px;height:90px;border-radius:10px;object-fit:cover;object-position:top center;border:2px solid var(--gold-d);flex-shrink:0;box-shadow:0 0 22px rgba(201,168,76,.18);}
+.dh-avatar-ph{width:90px;height:90px;border-radius:10px;border:2px dashed rgba(255,255,255,.1);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:2rem;color:var(--sub);background:rgba(0,0,0,.2);}
+.dh-avatar-spin{width:90px;height:90px;border-radius:10px;border:2px solid var(--gold-d);flex-shrink:0;background:rgba(0,0,0,.2);animation:spin-pulse 1.5s ease-in-out infinite;}
+@media(max-width:600px){.layout{flex-direction:column;padding:1rem;}.sidebar{width:100%;}.cg,.tr-main{grid-template-columns:1fr 1fr;}.tr-stat-grid{grid-template-columns:repeat(5,1fr);}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback } = React;
+const STORAGE_KEY = "hsr-tracker-v1";
+const STAT_NODES = ["ATQ","DEF","HP","VCR","EFB","ATQ","DEF","HP","VCR","EFB"];
+const ASC_LEVELS = [
+  {phase:1,cap:30},{phase:2,cap:40},{phase:3,cap:50},
+  {phase:4,cap:60},{phase:5,cap:70},{phase:6,cap:80},
+];
+
+const createCharacter = (name) => ({
+  id:`${Date.now()}-${Math.random().toString(36).slice(2,7)}`,
+  name:name.trim(), ascension:0, notes:"", imageUrl:"", imageLoading:false,
+  eidolons:Array(6).fill(false), lightCone:false,
+  relics:{head:false,hand:false,body:false,boot:false},
+  ornaments:{sphere:false,rope:false},
+  traces:{basicAtk:false,skill:false,ultimate:false,talent:false,technique:false,
+    a2:false,a4:false,a6:false,stats:Array(10).fill(false)},
+});
+
+function countProgress(char) {
+  const flat = [
+    (char.ascension??0)===6, ...char.eidolons, char.lightCone,
+    char.relics.head,char.relics.hand,char.relics.body,char.relics.boot,
+    char.ornaments.sphere,char.ornaments.rope,
+    char.traces.basicAtk,char.traces.skill,char.traces.ultimate,
+    char.traces.talent,char.traces.technique,char.traces.a2,char.traces.a4,char.traces.a6,
+    ...char.traces.stats,
+  ];
+  return {done:flat.filter(Boolean).length,total:flat.length};
+}
+
+async function fetchCharImage(name) {
+  const fmt = name.trim().split(/\s+/).map(w=>w[0].toUpperCase()+w.slice(1)).join("_");
+  const files = [`Character_${fmt}_icon.png`,`Character_${fmt}_Icon.png`,`${fmt}_icon.png`];
+  for (const f of files) {
+    try {
+      const url = `https://honkai-star-rail.fandom.com/api.php?action=query&titles=File:${encodeURIComponent(f)}&prop=imageinfo&iiprop=url&format=json&origin=*`;
+      const res = await fetch(url);
+      const data = await res.json();
+      const pages = Object.values(data?.query?.pages||{});
+      const img = pages?.[0]?.imageinfo?.[0]?.url;
+      if (img) return img;
+    } catch {}
+  }
+  return null;
+}
+
+function Stars() {
+  const stars = Array.from({length:55},(_,i)=>({
+    id:i, sz:(Math.random()*2.2+0.4).toFixed(1),
+    x:(Math.random()*100).toFixed(1), y:(Math.random()*100).toFixed(1),
+    d:(Math.random()*3+2).toFixed(1), dl:`${-(Math.random()*5).toFixed(1)}s`,
+    lo:(Math.random()*0.08+0.03).toFixed(2), hi:(Math.random()*0.5+0.25).toFixed(2),
+  }));
+  return (
+    <div className="stars">
+      {stars.map(s=>(
+        <div key={s.id} className="star" style={{
+          width:`${s.sz}px`,height:`${s.sz}px`,left:`${s.x}%`,top:`${s.y}%`,
+          "--d":`${s.d}s`,"--dl":s.dl,"--lo":s.lo,"--hi":s.hi,
+        }}/>
+      ))}
+    </div>
+  );
+}
+
+function CI({label,checked,onToggle}) {
+  return (
+    <div className={`ci ${checked?"on":""}`} onClick={onToggle}>
+      <div className="cb"><span className="ck">✓</span></div>
+      <span className="cl">{label}</span>
+    </div>
+  );
+}
+
+function App() {
+  const [chars,setChars] = useState([]);
+  const [selId,setSelId] = useState(null);
+  const [adding,setAdding] = useState(false);
+  const [newName,setNewName] = useState("");
+
+  // Load from localStorage on mount
+  useEffect(()=>{
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const d = JSON.parse(raw);
+        setChars((d.chars||[]).map(c=>({...c,imageLoading:false})));
+        setSelId(d.selId||null);
+      }
+    } catch {}
+  },[]);
+
+  // Save to localStorage on every change
+  useEffect(()=>{
+    try {
+      const toSave = {chars:chars.map(c=>({...c,imageLoading:false})),selId};
+      localStorage.setItem(STORAGE_KEY,JSON.stringify(toSave));
+    } catch {}
+  },[chars,selId]);
+
+  const sel = chars.find(c=>c.id===selId);
+
+  const addChar = () => {
+    if (!newName.trim()) return;
+    const c = createCharacter(newName);
+    setChars(p=>[...p,{...c,imageLoading:true}]);
+    setSelId(c.id);
+    setAdding(false);
+    setNewName("");
+    fetchCharImage(c.name).then(url=>{
+      setChars(p=>p.map(ch=>ch.id===c.id?{...ch,imageUrl:url||"",imageLoading:false}:ch));
+    });
+  };
+
+  const delChar = (id) => {
+    setChars(p=>p.filter(c=>c.id!==id));
+    if (selId===id) {
+      const rest = chars.filter(c=>c.id!==id);
+      setSelId(rest.length?rest[0].id:null);
+    }
+  };
+
+  const upd = useCallback((fn)=>{
+    setChars(p=>p.map(c=>c.id===selId?fn(c):c));
+  },[selId]);
+
+  const togEid = (i) => upd(c=>({...c,eidolons:c.eidolons.map((v,idx)=>idx===i?!v:v)}));
+  const togRelic = (k) => upd(c=>({...c,relics:{...c.relics,[k]:!c.relics[k]}}));
+  const togOrn = (k) => upd(c=>({...c,ornaments:{...c.ornaments,[k]:!c.ornaments[k]}}));
+  const togTrace = (k) => upd(c=>({...c,traces:{...c.traces,[k]:!c.traces[k]}}));
+  const togStat = (i) => upd(c=>({...c,traces:{...c.traces,stats:c.traces.stats.map((v,idx)=>idx===i?!v:v)}}));
+  const togLC = () => upd(c=>({...c,lightCone:!c.lightCone}));
+  const setAsc = (phase) => upd(c=>({...c,ascension:(c.ascension??0)===phase?phase-1:phase}));
+  const setNotes = (val) => upd(c=>({...c,notes:val}));
+
+  return (
+    <div className="app">
+      <Stars/>
+      <header className="header">
+        <h1>✦ HONKAI : STAR RAIL ✦</h1>
+        <p>Build Tracker · Acompanhe sua evolução</p>
+      </header>
+      <div className="layout">
+        <aside className="sidebar">
+          <div className="sb-title">Personagens</div>
+          {chars.map(c=>{
+            const {done,total}=countProgress(c);
+            const pct=Math.round((done/total)*100);
+            return (
+              <div key={c.id} className={`char-card ${c.id===selId?"active":""}`} onClick={()=>setSelId(c.id)}>
+                <div className="char-card-row">
+                  {c.imageLoading
+                    ? <div className="char-avatar-spin"/>
+                    : c.imageUrl
+                      ? <img className="char-avatar" src={c.imageUrl} alt={c.name} onError={e=>{e.target.style.display="none";}}/>
+                      : <div className="char-avatar-ph">✦</div>
+                  }
+                  <div className="char-card-info">
+                    <div className="char-name">{c.name}</div>
+                    <div className="pbar"><div className="pbar-fill" style={{width:`${pct}%`}}/></div>
+                    <div className="ppct">{done}/{total} · {pct}%</div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          {adding?(
+            <div className="add-form">
+              <input autoFocus placeholder="Nome do personagem (em inglês)..."
+                value={newName} onChange={e=>setNewName(e.target.value)}
+                onKeyDown={e=>{if(e.key==="Enter")addChar();if(e.key==="Escape"){setAdding(false);setNewName("");}}}
+              />
+              <div className="add-btns">
+                <button className="btn-ok" onClick={addChar}>Adicionar</button>
+                <button className="btn-no" onClick={()=>{setAdding(false);setNewName("");}}>✕</button>
+              </div>
+            </div>
+          ):(
+            <button className="add-btn" onClick={()=>setAdding(true)}>+ Novo personagem</button>
+          )}
+        </aside>
+
+        <main className="detail">
+          {!sel?(
+            <div className="empty">
+              <div className="ico">✦</div>
+              <div>Selecione ou adicione um personagem<br/>para acompanhar o build</div>
+            </div>
+          ):(()=>{
+            const {done,total}=countProgress(sel);
+            const pct=Math.round((done/total)*100);
+            const asc=sel.ascension??0;
+            const trDone=[sel.traces.basicAtk,sel.traces.skill,sel.traces.ultimate,
+              sel.traces.talent,sel.traces.technique,sel.traces.a2,sel.traces.a4,
+              sel.traces.a6,...sel.traces.stats].filter(Boolean).length;
+            return (
+              <>
+                <div className="dh">
+                  <div className="dh-left">
+                    {sel.imageLoading
+                      ? <div className="dh-avatar-spin"/>
+                      : sel.imageUrl
+                        ? <img className="dh-avatar" src={sel.imageUrl} alt={sel.name} onError={e=>{e.target.style.display="none";}}/>
+                        : <div className="dh-avatar-ph">✦</div>
+                    }
+                    <div className="dh-info">
+                      <div className="dname">{sel.name}</div>
+                      <div className="ovr">
+                        <div className="ovr-pct">{pct}%</div>
+                        <div className="ovr-bar"><div className="ovr-fill" style={{width:`${pct}%`}}/></div>
+                      </div>
+                    </div>
+                  </div>
+                  <button className="del-btn" onClick={()=>delChar(sel.id)}>Remover</button>
+                </div>
+
+                <div className="secs">
+                  {/* ASCENSÃO */}
+                  <div className="sec">
+                    <div className="sec-hd">
+                      <span className="sec-title">◈ Ascensão</span>
+                      <span className="sec-ct">A{asc}{asc<6?` · Lv. cap ${asc===0?20:ASC_LEVELS[asc-1].cap}`:" · Lv. 80 ✦"}</span>
+                    </div>
+                    <div className="sec-body">
+                      <div className="asc-row">
+                        {ASC_LEVELS.map(({phase,cap})=>(
+                          <div key={phase} className={`asc-step ${asc>=phase?"on":""}`} onClick={()=>setAsc(phase)}>
+                            <div className="asc-diamond"><span className="asc-inner">A{phase}</span></div>
+                            <div className="asc-lbl">A{phase}</div>
+                            <div className="asc-cap">Lv.{cap}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* EIDOLONS */}
+                  <div className="sec">
+                    <div className="sec-hd">
+                      <span className="sec-title">◈ Eidolons</span>
+                      <span className="sec-ct">{sel.eidolons.filter(Boolean).length}/6</span>
+                    </div>
+                    <div className="sec-body">
+                      <div className="eid-row">
+                        {sel.eidolons.map((active,i)=>(
+                          <div key={i} className={`eid-node ${active?"on":""}`} onClick={()=>togEid(i)}>
+                            <div className="eid-circle">E{i+1}</div>
+                            <div className="eid-lbl">E{i+1}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* CONE DE LUZ */}
+                  <div className="sec">
+                    <div className="sec-hd">
+                      <span className="sec-title">◈ Cone de Luz</span>
+                      <span className="sec-ct">{sel.lightCone?"1/1":"0/1"}</span>
+                    </div>
+                    <div className="sec-body">
+                      <CI label="🌠  Cone de luz obtido e equipado" checked={sel.lightCone} onToggle={togLC}/>
+                    </div>
+                  </div>
+
+                  {/* RELÍQUIAS */}
+                  <div className="sec">
+                    <div className="sec-hd">
+                      <span className="sec-title">◈ Relíquias</span>
+                      <span className="sec-ct">{Object.values(sel.relics).filter(Boolean).length}/4</span>
+                    </div>
+                    <div className="sec-body">
+                      <div className="cg">
+                        {[{k:"head",l:"👤  Cabeça"},{k:"hand",l:"🤝  Mãos"},{k:"body",l:"🧥  Corpo"},{k:"boot",l:"👟  Botas"}].map(({k,l})=>(
+                          <CI key={k} label={l} checked={sel.relics[k]} onToggle={()=>togRelic(k)}/>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* ORNAMENTOS */}
+                  <div className="sec">
+                    <div className="sec-hd">
+                      <span className="sec-title">◈ Ornamentos Planares</span>
+                      <span className="sec-ct">{Object.values(sel.ornaments).filter(Boolean).length}/2</span>
+                    </div>
+                    <div className="sec-body">
+                      <div className="cg">
+                        {[{k:"sphere",l:"🔮  Esfera Planar"},{k:"rope",l:"🔗  Corda de Ligação"}].map(({k,l})=>(
+                          <CI key={k} label={l} checked={sel.ornaments[k]} onToggle={()=>togOrn(k)}/>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* RASTROS */}
+                  <div className="sec">
+                    <div className="sec-hd">
+                      <span className="sec-title">◈ Rastros</span>
+                      <span className="sec-ct">{trDone}/18</span>
+                    </div>
+                    <div className="sec-body">
+                      <div className="tr-main">
+                        {[
+                          {k:"basicAtk",l:"⚔️  Ataque Básico"},{k:"skill",l:"💫  Habilidade"},
+                          {k:"ultimate",l:"⚡  Ultimate"},{k:"talent",l:"✨  Talento"},
+                          {k:"technique",l:"🎯  Técnica"},{k:"a2",l:"🔓  Bônus A2"},
+                          {k:"a4",l:"🔓  Bônus A4"},{k:"a6",l:"🔓  Bônus A6"},
+                        ].map(({k,l})=>(
+                          <CI key={k} label={l} checked={sel.traces[k]} onToggle={()=>togTrace(k)}/>
+                        ))}
+                      </div>
+                      <div className="tr-stat-lbl">Nódulos de Atributo</div>
+                      <div className="tr-stat-grid">
+                        {sel.traces.stats.map((active,i)=>(
+                          <div key={i} className={`sn ${active?"on":""}`} onClick={()=>togStat(i)}>
+                            <div className="sd">✓</div>
+                            <div className="sn-lbl">{STAT_NODES[i]}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* NOTAS */}
+                  <div className="sec">
+                    <div className="sec-hd"><span className="sec-title">◈ Notas</span></div>
+                    <div className="sec-body">
+                      <textarea className="notes-ta"
+                        placeholder="Anote aqui: sets ideais, prioridades, substats desejados..."
+                        value={sel.notes??""} onChange={e=>setNotes(e.target.value)}/>
+                    </div>
+                  </div>
+                </div>
+              </>
+            );
+          })()}
+        </main>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
